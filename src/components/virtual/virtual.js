@@ -70,7 +70,19 @@ const Virtual = {
           return slidesToRender;
         }()),
       });
-      onRendered();
+
+      // external rendering might be asynchronous so we look for DOM changes before processing slides
+      const MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+      if (MutationObserver) {
+        new MutationObserver((mutations, observer) => {
+          onRendered();
+          observer.disconnect();
+        }).observe(swiper.$wrapperEl[0], { childList : true });
+      } else if (window.addEventListener) {
+        swiper.$wrapperEl[0].addEventListener('DOMNodeInserted', onRendered, { capture: false, once: true });
+      } else {
+        onRendered();
+      }
       return;
     }
     const prependIndexes = [];
